@@ -1,7 +1,10 @@
 
 # Rust DRM
 
-Rust DRM provides a Rust implementation to the Direct Rendering Manager api in Linux.
+Rust DRM provides a Rust interface to the Direct Rendering Manager API
+in Linux.  This uses ioctl's to talk to DRM driver in order to get the
+current state of screens, perform mode setting, get vsync timing and
+allocate dumb buffers.
 
 (Nothing to do with Digital (Rights|Restrictions) Management.)
 
@@ -85,8 +88,10 @@ master.set_crtc(crtc_id, Some(fb_id), 0, 0, &[conn_id], mode).unwrap();
 
 ## TODO:
 
-- [ ] Better documentations
-- [ ] Page flip
+- [ ] Better documentation.
+- [ ] Capability information.
+- [ ] Page flip.
+- [ ] Clean up DumbBuf.
 - [ ] Implement Cursors. I don't have hardware to test this.
 
 
