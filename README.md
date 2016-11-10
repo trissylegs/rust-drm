@@ -8,6 +8,8 @@ allocate dumb buffers.
 
 (Nothing to do with Digital Rights Management.)
 
+[Documentation](https://hornetblack.github.io/rust-drm/drm/index.html)
+
 ## To use
 
 Add to Cargo.toml:
