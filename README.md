@@ -2,11 +2,11 @@
 # Rust DRM
 
 Rust DRM provides a Rust interface to the Direct Rendering Manager API
-in Linux.  This uses ioctl's to talk to DRM driver in order to get the
+in Linux.  This uses ioctl's to talk to a DRM driver in order to get the
 current state of screens, perform mode setting, get vsync timing and
 allocate dumb buffers.
 
-(Nothing to do with Digital (Rights|Restrictions) Management.)
+(Nothing to do with Digital Rights Management.)
 
 ## To use
 
