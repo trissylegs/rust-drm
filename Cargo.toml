@@ -1,0 +1,9 @@
+[package]
+name = "drm"
+version = "0.1.0"
+authors = ["Tristram Healy <trissylegs@gmail.com>"]
+
+[dependencies]
+libc = "*"
+bitflags = "*"
+memmap = "*"
