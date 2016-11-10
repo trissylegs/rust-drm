@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="API documentation for the Rust `Device` struct in crate `drm`.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, Device">
+
+    <title>drm::Device - Rust</title>
+
+    <link rel="stylesheet" type="text/css" href="../rustdoc.css">
+    <link rel="stylesheet" type="text/css" href="../main.css">
+    
+
+    
+    
+</head>
+<body class="rustdoc">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <nav class="sidebar">
+        
+        <p class='location'><a href='index.html'>drm</a></p><script>window.sidebarCurrent = {name: 'Device', ty: 'struct', relpath: ''};</script><script defer src="sidebar-items.js"></script>
+    </nav>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press ‘S’ to search, ‘?’ for more options…"
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content struct">
+<h1 class='fqn'><span class='in-band'>Struct <a href='index.html'>drm</a>::<wbr><a class='struct' href=''>Device</a></span><span class='out-of-band'><span id='render-detail'>
+                   <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
+                       [<span class='inner'>&#x2212;</span>]
+                   </a>
+               </span><a id='src-6358' class='srclink' href='../src/drm/src/lib.rs.html#51-53' title='goto source code'>[src]</a></span></h1>
+<pre class='rust struct'>pub struct Device { /* fields omitted */ }</pre><div class='docblock'><p>Open fd for a dri device. Such as /dev/dri/card0.</p>
+</div><h2 id='methods'>Methods</h2><h3 class='impl'><span class='in-band'><code>impl <a class='struct' href='../drm/struct.Device.html' title='drm::Device'>Device</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-943' class='srclink' href='../src/drm/src/lib.rs.html#55-304' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.cards' class='method'><span id='cards.v' class='invisible'><code>fn <a href='#method.cards' class='fnname'>cards</a>() -&gt; <a class='type' href='https://doc.rust-lang.org/nightly/std/io/error/type.Result.html' title='std::io::error::Result'>Result</a>&lt;<a class='struct' href='https://doc.rust-lang.org/nightly/alloc/boxed/struct.Box.html' title='alloc::boxed::Box'>Box</a>&lt;<a class='trait' href='https://doc.rust-lang.org/nightly/core/iter/iterator/trait.Iterator.html' title='core::iter::iterator::Iterator'>Iterator</a>&lt;Item=<a class='struct' href='https://doc.rust-lang.org/nightly/std/path/struct.PathBuf.html' title='std::path::PathBuf'>PathBuf</a>&gt;&gt;&gt;</code></span></h4>
+<div class='docblock'><p>List the cards found at the &quot;Usual place&quot; (/dev/dri).</p>
+
+<p>This is mostly for convienience. It&#39;s simply iterating over: /dev/dri/card*</p>
+
+<p>A more nuanced solution might need to be implemented.
+Such as support control and render nodes.</p>
+</div><h4 id='method.open' class='method'><span id='open.v' class='invisible'><code>fn <a href='#method.open' class='fnname'>open</a>&lt;P&gt;(path: P) -&gt; <a class='type' href='https://doc.rust-lang.org/nightly/std/io/error/type.Result.html' title='std::io::error::Result'>Result</a>&lt;<a class='struct' href='../drm/struct.Device.html' title='drm::Device'>Device</a>&gt; <span class='where'>where P: <a class='trait' href='https://doc.rust-lang.org/nightly/core/convert/trait.AsRef.html' title='core::convert::AsRef'>AsRef</a>&lt;<a class='struct' href='https://doc.rust-lang.org/nightly/std/path/struct.Path.html' title='std::path::Path'>Path</a>&gt;</span></code></span></h4>
+<div class='docblock'><p>Opens a card at a particular path.</p>
+</div><h4 id='method.first_card' class='method'><span id='first_card.v' class='invisible'><code>fn <a href='#method.first_card' class='fnname'>first_card</a>() -&gt; <a class='type' href='https://doc.rust-lang.org/nightly/std/io/error/type.Result.html' title='std::io::error::Result'>Result</a>&lt;<a class='struct' href='../drm/struct.Device.html' title='drm::Device'>Device</a>&gt;</code></span></h4>
+<div class='docblock'><p>Grab the first card availble (by filename order), this is
+probably not what you want to do. Except when:</p>
+
+<ul>
+<li>You have a stupid demo application (like the ones in ../examples)</li>
+<li>Fallback for a configurable program that is not configured.</li>
+<li>You have a completely bespoke system and you know which card should be there.
+(eg embedded systems)</li>
+</ul>
+
+<p>(i.e don&#39;t be asinine and force future users to use hacks to
+make your program work on multicard systems)</p>
+</div><h4 id='method.set_master' class='method'><span id='set_master.v' class='invisible'><code>fn <a href='#method.set_master' class='fnname'>set_master</a>&lt;'a&gt;(&amp;'a mut self) -&gt; <a class='type' href='https://doc.rust-lang.org/nightly/std/io/error/type.Result.html' title='std::io::error::Result'>Result</a>&lt;<a class='struct' href='../drm/struct.Master.html' title='drm::Master'>Master</a>&lt;'a&gt;&gt;</code></span></h4>
+<div class='docblock'><p>Set this process to be the current card master.</p>
+
+<p>Returns a Guard that will unset master on drop.  The card
+master can set the mode of the device and can update the frame
+buffer.</p>
+
+<p>Returns a Invalid Arguement error (<code>ErrorKind::InvalidInput</code>)
+when another process already is already card master.</p>
+</div><h4 id='method.version' class='method'><span id='version.v' class='invisible'><code>fn <a href='#method.version' class='fnname'>version</a>(&amp;self) -&gt; <a class='type' href='https://doc.rust-lang.org/nightly/std/io/error/type.Result.html' title='std::io::error::Result'>Result</a>&lt;<a class='struct' href='../drm/struct.Version.html' title='drm::Version'>Version</a>&gt;</code></span></h4>
+<div class='docblock'><p>Get driver version information.</p>
+</div><h4 id='method.get_resources' class='method'><span id='get_resources.v' class='invisible'><code>fn <a href='#method.get_resources' class='fnname'>get_resources</a>(&amp;self) -&gt; <a class='type' href='https://doc.rust-lang.org/nightly/std/io/error/type.Result.html' title='std::io::error::Result'>Result</a>&lt;<a class='struct' href='../drm/mode/struct.Resources.html' title='drm::mode::Resources'>Resources</a>&gt;</code></span></h4>
+<h4 id='method.get' class='method'><span id='get.v' class='invisible'><code>fn <a href='#method.get' class='fnname'>get</a>&lt;T:&nbsp;<a class='trait' href='../drm/mode/trait.Resource.html' title='drm::mode::Resource'>Resource</a>&gt;(&amp;self, id: <a class='struct' href='../drm/mode/struct.Id.html' title='drm::mode::Id'>Id</a>&lt;T&gt;) -&gt; <a class='type' href='https://doc.rust-lang.org/nightly/std/io/error/type.Result.html' title='std::io::error::Result'>Result</a>&lt;T&gt;</code></span></h4>
+<h4 id='method.busid' class='method'><span id='busid.v' class='invisible'><code>fn <a href='#method.busid' class='fnname'>busid</a>(&amp;self) -&gt; <a class='type' href='https://doc.rust-lang.org/nightly/std/io/error/type.Result.html' title='std::io::error::Result'>Result</a>&lt;<a class='struct' href='https://doc.rust-lang.org/nightly/collections/string/struct.String.html' title='collections::string::String'>String</a>&gt;</code></span></h4>
+<div class='docblock'><p>Fetches the busid of the card.</p>
+
+<p>Dev notes: on my system this is an empty string. In <code>xf86drm.h</code>
+there are functions that use this string to open the device.
+I assume it might be realted to  path names in <code>/sys/</code>.</p>
+</div><h4 id='method.request_vblank' class='method'><span id='request_vblank.v' class='invisible'><code>fn <a href='#method.request_vblank' class='fnname'>request_vblank</a>(&amp;self, data: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a>, crtc_num: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u32.html'>u32</a>) -&gt; <a class='type' href='https://doc.rust-lang.org/nightly/std/io/error/type.Result.html' title='std::io::error::Result'>Result</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>()</a>&gt;</code></span></h4>
+<div class='docblock'><p>Request a vblank event, that can be late read by an read_event.</p>
+
+<p><code>crtc_num</code> is the index of the CRTC id returned by <code>Resources::crtcs</code>.</p>
+</div><h4 id='method.read_event' class='method'><span id='read_event.v' class='invisible'><code>fn <a href='#method.read_event' class='fnname'>read_event</a>(&amp;mut self) -&gt; <a class='type' href='https://doc.rust-lang.org/nightly/std/io/error/type.Result.html' title='std::io::error::Result'>Result</a>&lt;<a class='enum' href='../drm/enum.Event.html' title='drm::Event'>Event</a>&gt;</code></span></h4>
+<div class='docblock'><p>Reads the next available event.</p>
+
+<h1 id='errors' class='section-header'><a href='#errors'>Errors</a></h1>
+<ul>
+<li>If no events are availble an error with kind
+<code>ErrorKind::WouldBlock</code> is returned.</li>
+<li>If a syscall is interrupted <code>ErrorKind::Interrupted</code></li>
+<li>If suprising data is returned <code>ErrorKind::InvalidData</code>.</li>
+<li>Any other <code>io:Error</code> from the kernel.</li>
+</ul>
+</div></div><h2 id='implementations'>Trait Implementations</h2><h3 class='impl'><span class='in-band'><code>impl <a class='trait' href='https://doc.rust-lang.org/nightly/core/fmt/trait.Debug.html' title='core::fmt::Debug'>Debug</a> for <a class='struct' href='../drm/struct.Device.html' title='drm::Device'>Device</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-6360' class='srclink' href='../src/drm/src/lib.rs.html#50' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.fmt' class='method'><span id='fmt.v' class='invisible'><code>fn <a href='https://doc.rust-lang.org/nightly/core/fmt/trait.Debug.html#tymethod.fmt' class='fnname'>fmt</a>(&amp;self, __arg_0: &amp;mut <a class='struct' href='https://doc.rust-lang.org/nightly/core/fmt/struct.Formatter.html' title='core::fmt::Formatter'>Formatter</a>) -&gt; <a class='type' href='https://doc.rust-lang.org/nightly/core/fmt/type.Result.html' title='core::fmt::Result'>Result</a></code></span></h4>
+<div class='docblock'><p>Formats the value using the given formatter.</p>
+</div></div><h3 class='impl'><span class='in-band'><code>impl <a class='trait' href='https://doc.rust-lang.org/nightly/std/sys/imp/ext/io/trait.AsRawFd.html' title='std::sys::imp::ext::io::AsRawFd'>AsRawFd</a> for <a class='struct' href='../drm/struct.Device.html' title='drm::Device'>Device</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-1023' class='srclink' href='../src/drm/src/lib.rs.html#320-324' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.as_raw_fd' class='method'><span id='as_raw_fd.v' class='invisible'><code>fn <a href='https://doc.rust-lang.org/nightly/std/sys/imp/ext/io/trait.AsRawFd.html#tymethod.as_raw_fd' class='fnname'>as_raw_fd</a>(&amp;self) -&gt; <a class='type' href='https://doc.rust-lang.org/nightly/std/sys/imp/ext/io/type.RawFd.html' title='std::sys::imp::ext::io::RawFd'>RawFd</a></code></span></h4>
+<div class='docblock'><p>Extracts the raw file descriptor. <a href="https://doc.rust-lang.org/nightly/std/sys/imp/ext/io/trait.AsRawFd.html#tymethod.as_raw_fd">Read more</a></p>
+</div></div><h3 class='impl'><span class='in-band'><code>impl <a class='trait' href='https://doc.rust-lang.org/nightly/std/sys/imp/ext/io/trait.IntoRawFd.html' title='std::sys::imp::ext::io::IntoRawFd'>IntoRawFd</a> for <a class='struct' href='../drm/struct.Device.html' title='drm::Device'>Device</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-1026' class='srclink' href='../src/drm/src/lib.rs.html#325-329' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.into_raw_fd' class='method'><span id='into_raw_fd.v' class='invisible'><code>fn <a href='https://doc.rust-lang.org/nightly/std/sys/imp/ext/io/trait.IntoRawFd.html#tymethod.into_raw_fd' class='fnname'>into_raw_fd</a>(self) -&gt; <a class='type' href='https://doc.rust-lang.org/nightly/std/sys/imp/ext/io/type.RawFd.html' title='std::sys::imp::ext::io::RawFd'>RawFd</a></code></span></h4>
+<div class='docblock'><p>Consumes this object, returning the raw underlying file descriptor. <a href="https://doc.rust-lang.org/nightly/std/sys/imp/ext/io/trait.IntoRawFd.html#tymethod.into_raw_fd">Read more</a></p>
+</div></div><h3 class='impl'><span class='in-band'><code>impl <a class='trait' href='https://doc.rust-lang.org/nightly/std/sys/imp/ext/io/trait.FromRawFd.html' title='std::sys::imp::ext::io::FromRawFd'>FromRawFd</a> for <a class='struct' href='../drm/struct.Device.html' title='drm::Device'>Device</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-1029' class='srclink' href='../src/drm/src/lib.rs.html#330-334' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.from_raw_fd' class='method'><span id='from_raw_fd.v' class='invisible'><code>unsafe fn <a href='https://doc.rust-lang.org/nightly/std/sys/imp/ext/io/trait.FromRawFd.html#tymethod.from_raw_fd' class='fnname'>from_raw_fd</a>(fd: <a class='type' href='https://doc.rust-lang.org/nightly/std/sys/imp/ext/io/type.RawFd.html' title='std::sys::imp::ext::io::RawFd'>RawFd</a>) -&gt; <a class='struct' href='../drm/struct.Device.html' title='drm::Device'>Device</a></code></span></h4>
+<div class='docblock'><p>Constructs a new instances of <code>Self</code> from the given raw file descriptor. <a href="https://doc.rust-lang.org/nightly/std/sys/imp/ext/io/trait.FromRawFd.html#tymethod.from_raw_fd">Read more</a></p>
+</div></div></section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <aside id="help" class="hidden">
+        <div>
+            <h1 class="hidden">Help</h1>
+
+            <div class="shortcuts">
+                <h2>Keyboard Shortcuts</h2>
+
+                <dl>
+                    <dt>?</dt>
+                    <dd>Show this help dialog</dd>
+                    <dt>S</dt>
+                    <dd>Focus the search field</dd>
+                    <dt>&larrb;</dt>
+                    <dd>Move up in search results</dd>
+                    <dt>&rarrb;</dt>
+                    <dd>Move down in search results</dd>
+                    <dt>&#9166;</dt>
+                    <dd>Go to active search result</dd>
+                    <dt>+</dt>
+                    <dd>Collapse/expand all sections</dd>
+                </dl>
+            </div>
+
+            <div class="infos">
+                <h2>Search Tricks</h2>
+
+                <p>
+                    Prefix searches with a type followed by a colon (e.g.
+                    <code>fn:</code>) to restrict the search to a given type.
+                </p>
+
+                <p>
+                    Accepted types are: <code>fn</code>, <code>mod</code>,
+                    <code>struct</code>, <code>enum</code>,
+                    <code>trait</code>, <code>type</code>, <code>macro</code>,
+                    and <code>const</code>.
+                </p>
+
+                <p>
+                    Search functions by type signature (e.g.
+                    <code>vec -> usize</code> or <code>* -> vec</code>)
+                </p>
+            </div>
+        </div>
+    </aside>
+
+    
+
+    <script>
+        window.rootPath = "../";
+        window.currentCrate = "drm";
+    </script>
+    <script src="../jquery.js"></script>
+    <script src="../main.js"></script>
+    <script defer src="../search-index.js"></script>
+</body>
+</html>

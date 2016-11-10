@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="API documentation for the Rust `mode` mod in crate `drm`.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, mode">
+
+    <title>drm::mode - Rust</title>
+
+    <link rel="stylesheet" type="text/css" href="../../rustdoc.css">
+    <link rel="stylesheet" type="text/css" href="../../main.css">
+    
+
+    
+    
+</head>
+<body class="rustdoc">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <nav class="sidebar">
+        
+        <p class='location'><a href='../index.html'>drm</a></p><script>window.sidebarCurrent = {name: 'mode', ty: 'mod', relpath: '../'};</script><script defer src="../sidebar-items.js"></script>
+    </nav>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press ‘S’ to search, ‘?’ for more options…"
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content mod">
+<h1 class='fqn'><span class='in-band'>Module <a href='../index.html'>drm</a>::<wbr><a class='mod' href=''>mode</a></span><span class='out-of-band'><span id='render-detail'>
+                   <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
+                       [<span class='inner'>&#x2212;</span>]
+                   </a>
+               </span><a id='src-356' class='srclink' href='../../src/drm/src/mode/mod.rs.html#2-1148' title='goto source code'>[src]</a></span></h1>
+<h2 id='structs' class='section-header'><a href="#structs">Structs</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.Connector.html'
+                                  title='drm::mode::Connector'>Connector</a></td>
+                           <td class='docblock-short'>
+                                <p>A connector represents the final output.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.Crtc.html'
+                                  title='drm::mode::Crtc'>Crtc</a></td>
+                           <td class='docblock-short'>
+                                <p>A CRTC the first stage in the encoding pipeline.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.DumbBuf.html'
+                                  title='drm::mode::DumbBuf'>DumbBuf</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.DumbBufFlags.html'
+                                  title='drm::mode::DumbBufFlags'>DumbBufFlags</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.Encoder.html'
+                                  title='drm::mode::Encoder'>Encoder</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.Fb.html'
+                                  title='drm::mode::Fb'>Fb</a></td>
+                           <td class='docblock-short'>
+                                <p>Fb is the DRM representation of frame buffer.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.Id.html'
+                                  title='drm::mode::Id'>Id</a></td>
+                           <td class='docblock-short'>
+                                <p>Id is a 32-bit integer that represents an object in the driver.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.ModeFlags.html'
+                                  title='drm::mode::ModeFlags'>ModeFlags</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.ModeInfo.html'
+                                  title='drm::mode::ModeInfo'>ModeInfo</a></td>
+                           <td class='docblock-short'>
+                                <p>The mode configuration fo the screen.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.ModeType.html'
+                                  title='drm::mode::ModeType'>ModeType</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.Plane.html'
+                                  title='drm::mode::Plane'>Plane</a></td>
+                           <td class='docblock-short'>
+                                <p>A plane is an extra frame buffer that the CRTC&#39;s can compose onto
+the output during scanout.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.Property.html'
+                                  title='drm::mode::Property'>Property</a></td>
+                           <td class='docblock-short'>
+                                <p>A property of a connector.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.PropertyBlob.html'
+                                  title='drm::mode::PropertyBlob'>PropertyBlob</a></td>
+                           <td class='docblock-short'>
+                                <p>Blob&#39;s are used to get EDID information out of a Property.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.PropertyEnum.html'
+                                  title='drm::mode::PropertyEnum'>PropertyEnum</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.PropertyFlags.html'
+                                  title='drm::mode::PropertyFlags'>PropertyFlags</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.Props.html'
+                                  title='drm::mode::Props'>Props</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.Resources.html'
+                                  title='drm::mode::Resources'>Resources</a></td>
+                           <td class='docblock-short'>
+                                <p>Resource lists all the Resources avaible on the card.</p>
+                           </td>
+                       </tr></table><h2 id='enums' class='section-header'><a href="#enums">Enums</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class='enum' href='enum.Connection.html'
+                                  title='drm::mode::Connection'>Connection</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='enum' href='enum.ConnectorType.html'
+                                  title='drm::mode::ConnectorType'>ConnectorType</a></td>
+                           <td class='docblock-short'>
+                                <p>Types of connectors.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='enum' href='enum.EncoderType.html'
+                                  title='drm::mode::EncoderType'>EncoderType</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='enum' href='enum.Subpixel.html'
+                                  title='drm::mode::Subpixel'>Subpixel</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr></table><h2 id='constants' class='section-header'><a href="#constants">Constants</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.DUNNO.html'
+                                  title='drm::mode::DUNNO'>DUNNO</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.FLAG_3D_FIELD_ALTERNATIVE.html'
+                                  title='drm::mode::FLAG_3D_FIELD_ALTERNATIVE'>FLAG_3D_FIELD_ALTERNATIVE</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.FLAG_3D_FRAME_PACKING.html'
+                                  title='drm::mode::FLAG_3D_FRAME_PACKING'>FLAG_3D_FRAME_PACKING</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.FLAG_3D_LINE_ALTERNATIVE.html'
+                                  title='drm::mode::FLAG_3D_LINE_ALTERNATIVE'>FLAG_3D_LINE_ALTERNATIVE</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.FLAG_3D_L_DEPTH.html'
+                                  title='drm::mode::FLAG_3D_L_DEPTH'>FLAG_3D_L_DEPTH</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.FLAG_3D_L_DEPTH_GFX_GFX_DEPTH.html'
+                                  title='drm::mode::FLAG_3D_L_DEPTH_GFX_GFX_DEPTH'>FLAG_3D_L_DEPTH_GFX_GFX_DEPTH</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.FLAG_3D_NONE.html'
+                                  title='drm::mode::FLAG_3D_NONE'>FLAG_3D_NONE</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.FLAG_3D_SIDE_BY_SIDE_FULL.html'
+                                  title='drm::mode::FLAG_3D_SIDE_BY_SIDE_FULL'>FLAG_3D_SIDE_BY_SIDE_FULL</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.FLAG_3D_SIDE_BY_SIDE_HALF.html'
+                                  title='drm::mode::FLAG_3D_SIDE_BY_SIDE_HALF'>FLAG_3D_SIDE_BY_SIDE_HALF</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.FLAG_3D_TOP_AND_BOTTOM.html'
+                                  title='drm::mode::FLAG_3D_TOP_AND_BOTTOM'>FLAG_3D_TOP_AND_BOTTOM</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.FLAG_BCAST.html'
+                                  title='drm::mode::FLAG_BCAST'>FLAG_BCAST</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.FLAG_CLKDIV2.html'
+                                  title='drm::mode::FLAG_CLKDIV2'>FLAG_CLKDIV2</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.FLAG_CSYNC.html'
+                                  title='drm::mode::FLAG_CSYNC'>FLAG_CSYNC</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.FLAG_DBLCLK.html'
+                                  title='drm::mode::FLAG_DBLCLK'>FLAG_DBLCLK</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.FLAG_DBLSCAN.html'
+                                  title='drm::mode::FLAG_DBLSCAN'>FLAG_DBLSCAN</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.FLAG_HSKEW.html'
+                                  title='drm::mode::FLAG_HSKEW'>FLAG_HSKEW</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.FLAG_INTERLACE.html'
+                                  title='drm::mode::FLAG_INTERLACE'>FLAG_INTERLACE</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.FLAG_NCSYNC.html'
+                                  title='drm::mode::FLAG_NCSYNC'>FLAG_NCSYNC</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.FLAG_NHSYNC.html'
+                                  title='drm::mode::FLAG_NHSYNC'>FLAG_NHSYNC</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.FLAG_NVSYNC.html'
+                                  title='drm::mode::FLAG_NVSYNC'>FLAG_NVSYNC</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.FLAG_PCSYNC.html'
+                                  title='drm::mode::FLAG_PCSYNC'>FLAG_PCSYNC</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.FLAG_PHSYNC.html'
+                                  title='drm::mode::FLAG_PHSYNC'>FLAG_PHSYNC</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.FLAG_PIXMUX.html'
+                                  title='drm::mode::FLAG_PIXMUX'>FLAG_PIXMUX</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.FLAG_PVSYNC.html'
+                                  title='drm::mode::FLAG_PVSYNC'>FLAG_PVSYNC</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.PROP_BITMASK.html'
+                                  title='drm::mode::PROP_BITMASK'>PROP_BITMASK</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.PROP_BLOB.html'
+                                  title='drm::mode::PROP_BLOB'>PROP_BLOB</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.PROP_ENUM.html'
+                                  title='drm::mode::PROP_ENUM'>PROP_ENUM</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.PROP_IMMUTABLE.html'
+                                  title='drm::mode::PROP_IMMUTABLE'>PROP_IMMUTABLE</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.PROP_PENDING.html'
+                                  title='drm::mode::PROP_PENDING'>PROP_PENDING</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.PROP_RANGE.html'
+                                  title='drm::mode::PROP_RANGE'>PROP_RANGE</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.TYPE_BUILTIN.html'
+                                  title='drm::mode::TYPE_BUILTIN'>TYPE_BUILTIN</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.TYPE_CLOCK_C.html'
+                                  title='drm::mode::TYPE_CLOCK_C'>TYPE_CLOCK_C</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.TYPE_CRTC_C.html'
+                                  title='drm::mode::TYPE_CRTC_C'>TYPE_CRTC_C</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.TYPE_DEFAULT.html'
+                                  title='drm::mode::TYPE_DEFAULT'>TYPE_DEFAULT</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.TYPE_DRIVER.html'
+                                  title='drm::mode::TYPE_DRIVER'>TYPE_DRIVER</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.TYPE_PREFERRED.html'
+                                  title='drm::mode::TYPE_PREFERRED'>TYPE_PREFERRED</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.TYPE_USERDEF.html'
+                                  title='drm::mode::TYPE_USERDEF'>TYPE_USERDEF</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr></table><h2 id='traits' class='section-header'><a href="#traits">Traits</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class='trait' href='trait.Resource.html'
+                                  title='drm::mode::Resource'>Resource</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr></table></section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <aside id="help" class="hidden">
+        <div>
+            <h1 class="hidden">Help</h1>
+
+            <div class="shortcuts">
+                <h2>Keyboard Shortcuts</h2>
+
+                <dl>
+                    <dt>?</dt>
+                    <dd>Show this help dialog</dd>
+                    <dt>S</dt>
+                    <dd>Focus the search field</dd>
+                    <dt>&larrb;</dt>
+                    <dd>Move up in search results</dd>
+                    <dt>&rarrb;</dt>
+                    <dd>Move down in search results</dd>
+                    <dt>&#9166;</dt>
+                    <dd>Go to active search result</dd>
+                    <dt>+</dt>
+                    <dd>Collapse/expand all sections</dd>
+                </dl>
+            </div>
+
+            <div class="infos">
+                <h2>Search Tricks</h2>
+
+                <p>
+                    Prefix searches with a type followed by a colon (e.g.
+                    <code>fn:</code>) to restrict the search to a given type.
+                </p>
+
+                <p>
+                    Accepted types are: <code>fn</code>, <code>mod</code>,
+                    <code>struct</code>, <code>enum</code>,
+                    <code>trait</code>, <code>type</code>, <code>macro</code>,
+                    and <code>const</code>.
+                </p>
+
+                <p>
+                    Search functions by type signature (e.g.
+                    <code>vec -> usize</code> or <code>* -> vec</code>)
+                </p>
+            </div>
+        </div>
+    </aside>
+
+    
+
+    <script>
+        window.rootPath = "../../";
+        window.currentCrate = "drm";
+    </script>
+    <script src="../../jquery.js"></script>
+    <script src="../../main.js"></script>
+    <script defer src="../../search-index.js"></script>
+</body>
+</html>
