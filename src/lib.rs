@@ -301,6 +301,37 @@ impl Device {
         self.fd.consume(nbytes);
         result
     }
+
+    /// Get the capability or value associated with a given capability.
+    pub fn capability(&self, cap: Capability) -> io::Result<u64> {
+        let mut call = ffi::get_cap {
+            capability: cap as u64,
+            value: 0,
+        };
+        impl DrmIoctl for ffi::get_cap {
+            fn request() -> c_ulong { DRM_IOCTL_GET_CAP }
+        }
+
+        try!(self.ioctl(&mut call));
+        Ok(call.value)
+    }
+}
+
+#[repr(u64)]
+pub enum Capability {
+    DumbBuffer = 0x1,
+    VblankHighCrtc = 0x2,
+    DumbPreferredDepth = 0x3,
+    DumbPreferShadow = 0x4,
+    Prime = 0x5,
+    // I think these a bit masked results?
+    // PrimeImport = 0x1,
+    // PrimeExport = 0x2,
+    TimestampMonotonic = 0x6,
+    AsyncPageFlip = 0x7,
+    CursorWidth = 0x8,
+    CursorHeight = 0x9,
+    Addfb2Modifiers = 0x10,
 }
 
 #[allow(dead_code)]
