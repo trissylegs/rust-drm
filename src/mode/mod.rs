@@ -1135,6 +1135,18 @@ impl DumbBuf {
     }
 }
 
+impl super::GemHandle for DumbBuf {
+    fn bo_handle(&self) -> u32 {
+        self.handle
+    }
+    fn width(&self) -> u32 {
+        self.width
+    }
+    fn height(&self) -> u32 {
+        self.height
+    }
+}
+
 /// Flags for DumbBuf creation.
 ///
 /// TODO: find out what values these should be.

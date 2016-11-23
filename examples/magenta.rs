@@ -4,6 +4,7 @@ extern crate libc;
 
 use std::thread;
 use std::time::{Instant,Duration};
+use std::cmp::min;
 use drm::Device;
 use drm::mode::*;
 
@@ -16,6 +17,10 @@ const YELLOW:  [u8; 4] = [0x00, 0xff, 0xff, 0xff];
 const MAGENTA: [u8; 4] = [0xff, 0x00, 0xff, 0xff];
 const CYAN:    [u8; 4] = [0xff, 0xff, 0x00, 0xff];
 const WHITE:   [u8; 4] = [0xff, 0xff, 0xff, 0xff];
+const CLEAR:   [u8; 4] = [0x00, 0x00, 0x00, 0x00];
+
+const CURSOR_WIDTH: u32 = 64;
+const CURSOR_HEIGHT: u32 = 64;
 
 fn main()
 {
@@ -33,6 +38,9 @@ fn main()
     // Get control of the card.
     let master = dev.set_master().expect("Failed to set master");
 
+    let mut min_width = u32::max_value();
+    let mut pipes = Vec::new();
+    
     for &conn_id in res.connectors() {
         match Connector::get(&master, conn_id) {
             Err(err) => println!("Failed to get connector {:?}: {}", conn_id, err),
@@ -60,6 +68,7 @@ fn main()
                     Some(&mode) => mode,
                 };
 
+                min_width = min(min_width, mode.hdisplay as u32);
                 // Create a frame buffer.
                 let buf = DumbBuf::create(&master,
                                           mode.hdisplay as u32,
@@ -73,9 +82,11 @@ fn main()
 
                 // FIME: What if two connectors are set to the same CRTC!
 
+                let pipe_num = res.crtcs().position(crtc.id());
+                
                 // Save all this information.
                 buffers.push(buf);
-                restore.push((conn, crtc));
+                restore.push((conn, crtc, pipe_num));
             }
         }
     }
@@ -101,7 +112,51 @@ fn main()
     println!("Render time = {}.{}", elapsed.as_secs(), elapsed.subsec_nanos() / 1000_000);
     println!("{} per pixel", (elapsed / pixel_count as u32).subsec_nanos());
 
-    thread::sleep(Duration::new(3, 0));
+    // Create a cursor.
+    let mut cursor_buf = DumbBuf::create(&master, CURSOR_WIDTH, CURSOR_HEIGHT, 32, DUNNO)
+        .expect("Failed to create cursor buffer");
+
+    let cursor_colors = &[WHITE];
+    
+    for (pixel, col) in cursor_buf.as_mut().chunks_mut(4).zip(cursor_colors.iter().cycle())
+    {
+        for i in 0..4 {
+            pixel[i] = col[i];
+        }
+    }
+
+    for (i, &(_, ref crtc, pipe_num)) in restore.iter().enumerate() {
+        if let Err(err) = master.set_cursor(crtc.id(), &cursor_buf) {
+            println!("Error setting cursor: {}", err);
+            continue;
+        }
+        if let Err(err) = master.move_cursor(crtc.id(), 0, 100) {
+            println!("Error moving cursor: {}", err);
+            continue;
+        }
+        master.request_vblank(i, pipe_num);
+    }
+
+    let start = Instant::new();
+    let max_time = Duration::new(3, 0);
+    let max_x = min_width - CURSOR_WIDTH;
+    let mut elapsed = Duration::new(0, 0);
+
+    while elapsed < max_time {
+        let event = master.read_event();
+        elapsed = start.elapsed();
+        let cursor_x = min(cursor_x + 10, (min_width - CURSOR_WIDTH) as i32);
+        if let Ok(event) = event {
+            match event {
+                Event::VBlank { user, .. } => {
+                    let (_, ref crtc, pipe_num) = restore[i];
+                    
+                    master.move_cursor(crtc.id(), cursor_x, 100);
+                    
+                }
+            }
+        }
+    }
 
     // Restore Connector, CRTC states.
     for (conn, crtc) in restore {

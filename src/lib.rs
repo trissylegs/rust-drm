@@ -36,6 +36,22 @@ use std::str;
 use std::string::FromUtf8Error;
 use std::time::Instant;
 
+#[allow(dead_code)]
+mod consts {
+    pub const DRM_EVENT_VBLANK: u32 = 0x01;
+    pub const DRM_EVENT_FLIP_COMPLETE: u32 = 0x02;
+    pub const DRM_VBLANK_ABSOLUTE: u32 = 0;
+    pub const DRM_VBLANK_RELATIVE: u32 = 1;
+    pub const DRM_VBLANK_HIGH_CRTC_MASK: u32 = 62;
+    pub const DRM_VBLANK_EVENT: u32 = 67108864;
+    pub const DRM_VBLANK_FLIP: u32 = 134217728;
+    pub const DRM_VBLANK_NEXTONMISS: u32 = 268435456;
+    pub const DRM_VBLANK_SECONDARY: u32 = 536870912;
+    pub const DRM_VBLANK_SIGNAL: u32 = 1073741824;
+    pub const DRM_MODE_CURSOR_BO: u32 = 0x01;
+    pub const DRM_MODE_CURSOR_MOVE: u32 = 0x02;
+}    
+
 fn check_ioctl_err(ret: c_int) -> io::Result<()> {
     if ret < 0 {
         Err(io::Error::last_os_error())
@@ -333,20 +349,6 @@ pub enum Capability {
     CursorHeight = 0x9,
     Addfb2Modifiers = 0x10,
 }
-
-#[allow(dead_code)]
-mod consts {
-    pub const DRM_EVENT_VBLANK: u32 = 0x01;
-    pub const DRM_EVENT_FLIP_COMPLETE: u32 = 0x02;
-    pub const DRM_VBLANK_ABSOLUTE: u32 = 0;
-    pub const DRM_VBLANK_RELATIVE: u32 = 1;
-    pub const DRM_VBLANK_HIGH_CRTC_MASK: u32 = 62;
-    pub const DRM_VBLANK_EVENT: u32 = 67108864;
-    pub const DRM_VBLANK_FLIP: u32 = 134217728;
-    pub const DRM_VBLANK_NEXTONMISS: u32 = 268435456;
-    pub const DRM_VBLANK_SECONDARY: u32 = 536870912;
-    pub const DRM_VBLANK_SIGNAL: u32 = 1073741824;
-}    
  
 impl AsRawFd for Device {
     fn as_raw_fd(&self) -> RawFd {
@@ -375,6 +377,15 @@ impl DrmIoctl for ffi::version {
     fn request() -> c_ulong { DRM_IOCTL_VERSION }
 }
 
+impl DrmIoctl for ffi::mode_cursor {
+    fn request() -> c_ulong { DRM_IOCTL_MODE_CURSOR }
+}
+
+pub trait GemHandle {
+    fn bo_handle(&self) -> u32;
+    fn width(&self) -> u32;
+    fn height(&self) -> u32;
+}
 
 /// Represents a card when the process is the card master.
 ///
@@ -417,6 +428,32 @@ impl<'a> Drop for Master<'a> {
 
 impl<'a> Master<'a>
 {
+    pub fn set_cursor<B>(&self, crtc_id: Id<mode::Crtc>, bo: &B) -> io::Result<()>
+        where B: GemHandle
+    {
+        let mut arg = ffi::mode_cursor {
+            flags: consts::DRM_MODE_CURSOR_BO,
+            crtc_id: crtc_id.as_u32(),
+            width: bo.width(),
+            height: bo.height(),
+            handle: bo.bo_handle(),
+            ..Default::default()
+        };
+
+        self.ioctl(&mut arg)
+    }
+
+    pub fn move_cursor(&self, crtc_id: Id<mode::Crtc>, x: i32, y: i32) -> io::Result<()> {
+        let mut arg = ffi::mode_cursor {
+            flags: consts::DRM_MODE_CURSOR_MOVE,
+            crtc_id: crtc_id.as_u32(),
+            x: x,
+            y: y,
+            ..Default::default()
+        };
+        self.ioctl(&mut arg)
+    }
+    
     /// Set the mode, and the frame buffer.
     ///
     /// The driver will pick a path from the given crtc to the given connectors.
