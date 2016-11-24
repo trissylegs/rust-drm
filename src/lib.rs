@@ -105,6 +105,27 @@ impl Device {
             })
     }
 
+    /// Set the file descriptor to non-blocking mode.
+    pub fn set_nonblocking(&mut self, nonblocking: bool) -> io::Result<()> {
+        unsafe {
+            let old_flags = libc::fcntl(self.as_raw_fd(), libc::F_GETFL);
+            if old_flags == -1 {
+                return Err(io::Error::last_os_error());
+            }
+            let new_flags = if nonblocking {
+                old_flags |  libc::O_NONBLOCK
+            } else {
+                old_flags & !libc::O_NONBLOCK
+            };
+            if new_flags != old_flags {
+                if libc::fcntl(self.as_raw_fd(), libc::F_SETFL, new_flags) == -1 {
+                    return Err(io::Error::last_os_error());
+                }
+            }
+            Ok(())
+        }
+    }
+
     /// Grab the first card availble (by filename order), this is
     /// probably not what you want to do. Except when:
     /// 
