@@ -1,12 +1,10 @@
 
 extern crate drm;
 use drm::Device;
-use std::fs::Metadata;
-use std::os::unix::prelude::*;
 
 fn main() {
     for path in Device::cards().unwrap() {
-        let mut dev = Device::open(&path).unwrap();
+        let dev = Device::open(&path).unwrap();
         println!("{}", path.display());
         println!(" driver info:");
         let version = dev.version().unwrap();

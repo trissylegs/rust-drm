@@ -12,12 +12,22 @@ extern crate libc;
 #[macro_use]
 extern crate bitflags;
 extern crate memmap;
+#[cfg(feature = "tokio")]
+extern crate futures;
+#[cfg(feature = "tokio")]
+extern crate tokio_core;
+#[cfg(feature = "tokio")]
+extern crate mio;
 
 mod ioctl_vals;
 mod ffi;
 mod fourcc;
+#[cfg(feature = "tokio")]
+pub mod tokio;
 pub mod mode;
 
+#[cfg(feature = "tokio")]
+use tokio_core::reactor::Handle;
 use mode::Id;
 use ioctl_vals::*;
 use libc::ioctl;
@@ -68,7 +78,8 @@ pub struct Device {
     fd: BufReader<File>,
 }
 
-impl Device {
+impl Device {    
+    
     /// List the cards found at the "Usual place" (/dev/dri).
     ///
     /// This is mostly for convienience. It's simply iterating over: /dev/dri/card*
@@ -101,8 +112,16 @@ impl Device {
             .write(true)
             .open(path)
             .map(|f| {
-                Device { fd: BufReader::with_capacity(BUFFER_CAPACITY, f) }
+                Device {
+                    fd: BufReader::with_capacity(BUFFER_CAPACITY, f),
+                }
             })
+    }
+
+    fn try_clone(&self) -> io::Result<Device> {
+        Ok(Device {
+            fd: BufReader::with_capacity(0, self.fd.get_ref().try_clone()?)
+        })
     }
 
     /// Set the file descriptor to non-blocking mode.
@@ -352,6 +371,11 @@ impl Device {
         try!(self.ioctl(&mut call));
         Ok(call.value)
     }
+
+    #[cfg(feature = "tokio")]
+    pub fn event_stream(self, handle: &Handle) -> io::Result<tokio::EventFuture> {
+        tokio::EventFuture::new(self, handle)
+    }
 }
 
 #[repr(u64)]
@@ -383,7 +407,9 @@ impl IntoRawFd for Device {
 }
 impl FromRawFd for Device {
     unsafe fn from_raw_fd(fd: RawFd) -> Device {
-        Device { fd: BufReader::with_capacity(BUFFER_CAPACITY, File::from_raw_fd(fd)) }
+        Device {
+            fd: BufReader::with_capacity(BUFFER_CAPACITY, File::from_raw_fd(fd)),
+        }
     }
 }
 
@@ -400,6 +426,9 @@ impl DrmIoctl for ffi::version {
 
 impl DrmIoctl for ffi::mode_cursor {
     fn request() -> c_ulong { DRM_IOCTL_MODE_CURSOR }
+}
+impl DrmIoctl for ffi::mode_cursor2 {
+    fn request() -> c_ulong { DRM_IOCTL_MODE_CURSOR2 }
 }
 
 pub trait GemHandle {
@@ -463,6 +492,23 @@ impl<'a> Master<'a>
 
         self.ioctl(&mut arg)
     }
+    pub fn set_cursor2<B>(&self, crtc_id: Id<mode::Crtc>, bo: &B,
+                          hot_x: i32, hot_y: i32)
+                          -> io::Result<()>
+        where B: GemHandle
+    {
+        let mut arg = ffi::mode_cursor2 {
+            flags: consts::DRM_MODE_CURSOR_BO,
+            crtc_id: crtc_id.as_u32(),
+            width: bo.width(),
+            height: bo.height(),
+            handle: bo.bo_handle(),
+            hot_x: hot_x, hot_y: hot_y,
+            ..Default::default()
+        };
+        self.ioctl(&mut arg)
+    }
+    
 
     pub fn move_cursor(&self, crtc_id: Id<mode::Crtc>, x: i32, y: i32) -> io::Result<()> {
         let mut arg = ffi::mode_cursor {
@@ -530,7 +576,6 @@ pub struct Version {
     date: Result<String, Vec<u8>>,
     desc: Result<String, Vec<u8>>
 }
-
 
 impl Version {
     /// Major, minor and patch number of the driver software.

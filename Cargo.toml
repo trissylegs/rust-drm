@@ -7,3 +7,10 @@ authors = ["Tristram Healy <trissylegs@gmail.com>"]
 libc = "*"
 bitflags = "*"
 memmap = "*"
+futures = { version = "*", optional = true }
+tokio-core = { version = "*", optional = true }
+mio = { version = "*", optional = true }
+
+[features]
+default = []
+tokio = ["futures", "tokio-core", "mio"]

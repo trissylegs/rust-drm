@@ -3,7 +3,7 @@ extern crate drm;
 use drm::*;
 
 fn main() {
-    let mut dev = Device::first_card().unwrap();
+    let dev = Device::first_card().unwrap();
     let version: Version = dev.version().unwrap();
     println!("{:#?}", version);
     println!("name: {}", version.name().unwrap());

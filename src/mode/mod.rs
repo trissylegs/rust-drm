@@ -1046,14 +1046,15 @@ pub struct DumbBuf
     pitch: u32,
     size: u64,
     fb: Fb,
-    map: Mmap
+    map: Mmap,
+    dev: Device,
 }
 
 // Todo: destroy DumbBuf
 //
 // We need access to the underlying Fd to destroy it. Potential solutions:
 //  * Put dev.fd behind a Arc. Then we can carry around copies of it.
-//  * dup dev.fd, so we can have our own copy of it.
+//  * dup dev.fd, so we can have our own copy of it. (I like this one)
 //  * maintain a reference to &Device so we can call Device::ioctl.
 //  * Require the use to provide &Device when destroying buffer.
 //    then Drop does not destroy the buffer.
@@ -1064,12 +1065,19 @@ impl DumbBuf {
     /// mean we don't have to deal holding onto the device or the
     /// potential error of mapping on the wrong device.
     pub fn create(dev: &Device,
-                      width: u32, height: u32,
-                      bpp: u32, flags: DumbBufFlags)
-                      -> io::Result<DumbBuf>
+                  width: u32, height: u32,
+                  bpp: u32, flags: DumbBufFlags)
+                  -> io::Result<DumbBuf>
+    { DumbBuf::create_with_depth(dev, width, height, bpp, 24, flags) }
+
+    pub fn create_with_depth(dev: &Device,
+                             width: u32, height: u32,
+                             bpp: u32, depth: u32, flags: DumbBufFlags)
+                             -> io::Result<DumbBuf>
     {
         // TODO: dumb depth
-        const DEPTH: u32 = 24;
+        // const DEPTH: u32 = 24;
+        let dev = dev.try_clone()?;
         
         let mut create_dumb =
             ffi::create_dumb {
@@ -1085,7 +1093,7 @@ impl DumbBuf {
         try!(dev.ioctl(&mut create_dumb));
 
         let fb = try!(Fb::add(&dev, create_dumb.handle,
-                              width, height, bpp, create_dumb.pitch, DEPTH));
+                              width, height, bpp, create_dumb.pitch, depth));
         
         let mut map_dumb =
             ffi::map_dumb {
@@ -1108,6 +1116,7 @@ impl DumbBuf {
             handle: create_dumb.handle,
             fb: fb,
             map: map,
+            dev: dev,
         })
     }
 
@@ -1117,6 +1126,11 @@ impl DumbBuf {
 
     /// (width, height) in pixels
     pub fn size(&self) -> (u32, u32) { (self.width, self.height) }
+
+    /// Size of buffer in bytes
+    pub fn bytes(&self) -> usize { self.size as usize }
+    /// Distance between rows in bytes
+    pub fn pitch(&self) -> usize { self.pitch as usize }
 
     /// Bits per pixel
     pub fn bpp(&self) -> u32 { self.bpp }
@@ -1132,6 +1146,20 @@ impl DumbBuf {
     /// Access the Fb object associated with this.
     pub fn fb(&self) -> &Fb {
         &self.fb
+    }
+}
+
+impl Drop for DumbBuf {
+    fn drop(&mut self) {
+        // self.map.take();
+        // We need to continue if this fails.
+        Fb::rm(&self.dev, self.fb.id()).ok();
+
+        impl DrmIoctl for ffi::destroy_dumb {
+            fn request() -> c_ulong { DRM_IOCTL_MODE_DESTROY_DUMB }
+        }
+        let mut destroy = ffi::destroy_dumb { handle: self.handle };
+        self.dev.ioctl(&mut destroy).ok();
     }
 }
 
