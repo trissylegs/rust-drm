@@ -12,6 +12,17 @@ categories = ["api-bindings", "os::unix-apis"]
 license = "Apache-2.0"
 license-file = "LICENSE"
 
+# I have a lot of junk lying around. cargo-package does not like them.
+include = [
+    "Cargo.toml",
+    "src/**/*.rs",
+    "tests/**/*.rs",
+    "examples/*.rs",
+    "LICENCE",
+    "README.md",
+    "ioctl_vals.c",
+]
+
 [dependencies]
 libc = "*"
 bitflags = "*"
@@ -23,5 +34,3 @@ mio = { version = "*", optional = true }
 [features]
 default = []
 tokio = ["futures", "tokio-core", "mio"]
-
-
