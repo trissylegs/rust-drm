@@ -2,8 +2,8 @@
 name = "drm"
 version = "0.1.0"
 authors = ["Tristram Healy <trissylegs@gmail.com>"]
-
-description = "A rust library for using the Linux Kernal's DRM and KMS Api."
+ 
+description = "A rust library for using the Linux Kernel's DRM and KMS Api."
 
 repository = "https://www.github.com/HornetBlack/rust-drm"
 readme = "README.md"
