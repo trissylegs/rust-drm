@@ -91,9 +91,9 @@ master.set_crtc(crtc_id, Some(fb_id), 0, 0, &[conn_id], mode).unwrap();
 ## TODO:
 
 - [ ] Better documentation.
-- [✓] Capability information.
+- [X] Capability information.
 - [ ] Page flip.
 - [ ] Clean up DumbBuf.
-- [✓] Implement Cursors.
+- [X] Implement Cursors.
 
 
