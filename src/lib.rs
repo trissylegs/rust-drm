@@ -26,10 +26,13 @@ mod fourcc;
 pub mod tokio;
 pub mod mode;
 
+// Local imports
+use ioctl_vals::*;
+use mode::*;
+
+// External imports
 #[cfg(feature = "tokio")]
 use tokio_core::reactor::Handle;
-use mode::Id;
-use ioctl_vals::*;
 use libc::ioctl;
 use std::ops::{Deref, DerefMut};
 use std::fs::{self, File, OpenOptions};
@@ -228,6 +231,43 @@ impl Device {
 
     pub fn get<T: mode::Resource>(&self, id: Id<T>) -> io::Result<T> {
         T::get(self, id)
+    }
+    pub fn get_object_props<T: mode::Resource>(&self, id: Id<T>)
+                                               -> io::Result<Vec<(Id<Property>, u64)>>
+    {
+        impl DrmIoctl for ffi::mode_obj_get_properties {
+            fn request() -> c_ulong { DRM_IOCTL_MODE_OBJ_GETPROPERTIES }
+        }
+
+        let mut get_props = ffi::mode_obj_get_properties::default();
+        get_props.obj_id = id.as_u32();
+        get_props.obj_type = T::object_type();
+        
+        self.ioctl(&mut get_props)?;
+
+        let mut props = Vec::new();
+        let mut prop_values = Vec::new();
+
+        // Retry if prop value changes between calls.
+        // The contents of props and prop_values is not filled if count_prop changes.
+        while get_props.count_props > 0 {
+            let prev_count = get_props.count_props;
+
+            let no_id = unsafe { Id::from_u32(1).unwrap() };
+            
+            props.resize(get_props.count_props as usize, no_id);
+            prop_values.resize(get_props.count_props as usize, 0u64);
+
+            get_props.props_ptr       = props.as_mut_ptr() as usize as u64;
+            get_props.prop_values_ptr = prop_values.as_mut_ptr() as usize as u64;
+
+            self.ioctl(&mut get_props)?;
+            if get_props.count_props == prev_count {
+                break;
+            }
+        }
+
+        Ok(props.into_iter().zip(prop_values.into_iter()).collect())
     }
 
     /// Fetches the busid of the card.

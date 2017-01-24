@@ -1,8 +1,9 @@
 
 mod ffi;
 
+use std::slice;
 use std::{io, fmt, str};
-use std::mem::{transmute, zeroed};
+use std::mem::{transmute, zeroed, size_of};
 use std::os::raw::c_ulong;
 use std::cmp::Ordering;
 use super::ioctl_vals::*;
@@ -12,6 +13,17 @@ use super::DrmIoctl;
 use std::marker::PhantomData;
 use memmap::{Mmap, Protection};
 use std::hash::{Hash, Hasher};
+
+
+const DRM_MODE_OBJECT_CRTC: u32 = 0xcccccccc;
+const DRM_MODE_OBJECT_CONNECTOR: u32 = 0xc0c0c0c0;
+const DRM_MODE_OBJECT_ENCODER: u32 = 0xe0e0e0e0;
+// const DRM_MODE_OBJECT_MODE: u32 = 0xdededede;
+const DRM_MODE_OBJECT_PROPERTY: u32 = 0xb0b0b0b0;
+const DRM_MODE_OBJECT_FB: u32 = 0xfbfbfbfb;
+const DRM_MODE_OBJECT_BLOB: u32 = 0xbbbbbbbb;
+const DRM_MODE_OBJECT_PLANE: u32 = 0xeeeeeeee;
+// const DRM_MODE_OBJECT_ANY: u32 = 0;
 
 /// Id is a 32-bit integer that represents an object in the driver.
 ///
@@ -77,10 +89,13 @@ impl<T: Resource> Id<T> {
     }
     /// Get the value of the id.
     pub        fn as_u32(&self) -> u32 { self.0 }
+
 }
 
 pub trait Resource: Sized {
     fn get(dev: &Device, id: Id<Self>) -> io::Result<Self>;
+
+    fn object_type() -> u32; // { DRM_MODE_OBJECT_ANY }
 }
 
 // /// KMS ioctl's accept 64 bit integers for pointers. So we must
@@ -216,6 +231,7 @@ impl DrmIoctl for ffi::get_connector
 
 impl Resource for Connector
 {
+    fn object_type() -> u32 { DRM_MODE_OBJECT_CONNECTOR }
     fn get(dev: &Device, id: Id<Connector>) -> io::Result<Connector>
     {
         unsafe {
@@ -584,6 +600,7 @@ impl DrmIoctl for ffi::get_property
 
 impl Resource for Property
 {
+    fn object_type() -> u32 { DRM_MODE_OBJECT_PROPERTY }
     fn get(dev: &Device, id: Id<Property>) -> io::Result<Property>
     {
         unsafe {
@@ -633,10 +650,10 @@ impl Resource for Property
 }
 impl Property
 {
-    pub fn flags(&self) -> PropertyFlags
-    {
-        self.flags
-    }
+    pub fn flags(&self) -> PropertyFlags { self.flags }
+    pub fn values(&self) -> &[i64] { self.values.as_ref() }
+    pub fn name(&self) -> &str { self.name.as_ref() }
+    pub fn enums(&self) -> &[PropertyEnum] { self.enums.as_ref() }
 }
 
 
@@ -719,6 +736,7 @@ impl Crtc
 
 impl Resource for Crtc
 {
+    fn object_type() -> u32 { DRM_MODE_OBJECT_CRTC }
     fn get(dev: &Device, id: Id<Crtc>) -> io::Result<Crtc>
     {
         let mut get_crtc = ffi::crtc {
@@ -759,6 +777,7 @@ impl DrmIoctl for ffi::get_encoder
 
 impl Resource for Encoder
 {
+    fn object_type() -> u32 { DRM_MODE_OBJECT_ENCODER }
     fn get(dev: &Device, id: Id<Encoder>) -> io::Result<Encoder>
     {
         let mut get_encoder = ffi::get_encoder {
@@ -836,7 +855,7 @@ impl EncoderType
 #[derive(Debug, Clone)]
 pub struct Plane
 {
-    plane_id: u32,
+    plane_id: Id<Plane>,
     crtc_id: u32,
     fb_id: u32,
     possible_crtcs: u32,
@@ -852,26 +871,14 @@ impl DrmIoctl for ffi::get_plane
 {
     fn request() -> c_ulong { DRM_IOCTL_MODE_GETPLANE }
 }
-impl Plane {
-    /// Planes are not listed in the `Resources` structure so we must fetch a list of them
-    /// seperately.
-    pub fn get_ids(dev: &Device) -> io::Result<Vec<u32>>
-    {
-        let mut plane_res = ffi::get_plane_res::default();
-        try!(dev.ioctl(&mut plane_res));
 
-        let mut ids = Vec::new();
-        ids.resize(plane_res.count_planes as usize, 0);
-        plane_res.plane_id_ptr = from_ptr(ids.as_mut_ptr());
-
-        try!(dev.ioctl(&mut plane_res));
-        Ok(ids)
-    }
-    pub fn get(dev: &Device, id: u32) -> io::Result<Plane>
-    {
+impl Resource for Plane
+{
+    fn object_type() -> u32 { DRM_MODE_OBJECT_PLANE }
+    fn get(dev: &Device, id: Id<Plane>) -> io::Result<Plane> {
         loop {
             let mut plane = ffi::get_plane::default();
-            plane.plane_id = id;
+            plane.plane_id = id.as_u32();
 
             try!(dev.ioctl(&mut plane));
             let counts = plane;
@@ -897,6 +904,23 @@ impl Plane {
     }
 }
 
+impl Plane {
+    /// Planes are not listed in the `Resources` structure so we must fetch a list of them
+    /// seperately.
+    pub fn get_ids(dev: &Device) -> io::Result<Vec<Id<Plane>>>
+    {
+        let mut plane_res = ffi::get_plane_res::default();
+        try!(dev.ioctl(&mut plane_res));
+
+        let mut ids = Vec::new();
+        ids.resize(plane_res.count_planes as usize, Id(0, PhantomData));
+        plane_res.plane_id_ptr = from_ptr(ids.as_mut_ptr());
+
+        try!(dev.ioctl(&mut plane_res));
+        Ok(ids)
+    }
+}
+
 /// Blob's are used to get EDID information out of a Property.
 ///
 /// TODO: Make this usable.
@@ -912,6 +936,7 @@ impl DrmIoctl for ffi::get_blob {
 
 impl Resource for PropertyBlob
 {
+    fn object_type() -> u32 { DRM_MODE_OBJECT_BLOB }
     fn get(dev: &Device, blob_id: Id<PropertyBlob>) -> io::Result<PropertyBlob>
     {
         let mut get_blob = ffi::get_blob::default();
@@ -946,6 +971,7 @@ pub struct Fb {
     handle: u32
 }
 impl Resource for Fb {
+    fn object_type() -> u32 { DRM_MODE_OBJECT_FB }
     fn get(dev: &Device, id: Id<Fb>) -> io::Result<Fb> {
         /// There are two ioctls that make use of drm_mode_fb_cmd.
         /// So we must define DrmIoctl locally.
@@ -1035,8 +1061,25 @@ impl Fb
     }
 }
 
+// /// Units that a dumb buffer is made of.
+// ///
+// /// (Not nessasarily a pixel. For example in Multiplane YUV, each
+// /// pixel is made up of 1 bytes in the Y plane and 1/{1,2,4} of a byte
+// /// in the U and V planes.
+// ///
+// /// # Warning #
+// ///
+// /// This value will be initialized automatically (as zero pages).
+// /// Drop is also not called when the DumbBuf is dropped.
+// unsafe trait BufferData: Sized {
+//     fn bpp() -> u32;
+// }
+// unsafe impl BufferData for  u8 { fn bpp() -> u32 {  8 } }
+// unsafe impl BufferData for u16 { fn bpp() -> u32 { 16 } }
+// unsafe impl BufferData for u32 { fn bpp() -> u32 { 32 } }
+
 #[allow(dead_code)]
-pub struct DumbBuf
+pub struct DumbBuf<P>
 {
     handle: u32,
     height: u32,
@@ -1048,6 +1091,7 @@ pub struct DumbBuf
     fb: Fb,
     map: Mmap,
     dev: Device,
+    _phantom: PhantomData<*mut P>
 }
 
 // Todo: destroy DumbBuf
@@ -1059,21 +1103,45 @@ pub struct DumbBuf
 //  * Require the use to provide &Device when destroying buffer.
 //    then Drop does not destroy the buffer.
 
-impl DumbBuf {
+// Todo: 24-bit buffers.
+//
+// There are probably devices that use 24-bit pixel depths and thus 24 bits per 
+
+impl DumbBuf<u8>
+{
+    pub fn create(dev: &Device, width: u32, height: u32) -> io::Result<DumbBuf<u8>> {
+        Self::create_with_depth(dev, width, height,  8, 0, DUNNO)
+    }
+}
+impl DumbBuf<u16>
+{
+    pub fn create(dev: &Device, width: u32, height: u32) -> io::Result<DumbBuf<u16>> {
+        Self::create_with_depth(dev, width, height, 16, 0, DUNNO)
+    }
+}
+impl DumbBuf<u32>
+{
+    pub fn create(dev: &Device, width: u32, height: u32) -> io::Result<DumbBuf<u32>> {
+        Self::create_with_depth(dev, width, height, 32, 0, DUNNO)
+    }
+}
+
+impl<B> DumbBuf<B> {
     /// Creates, maps and adds a dumb buf.  I have not checked if it's
     /// wise to do all 3 or let the client deal with it.  But it does
     /// mean we don't have to deal holding onto the device or the
     /// potential error of mapping on the wrong device.
-    pub fn create(dev: &Device,
-                  width: u32, height: u32,
-                  bpp: u32, flags: DumbBufFlags)
-                  -> io::Result<DumbBuf>
+    fn create_(dev: &Device,
+               width: u32, height: u32,
+               bpp: u32, flags: DumbBufFlags)
+               -> io::Result<DumbBuf<B>>
     { DumbBuf::create_with_depth(dev, width, height, bpp, 24, flags) }
 
+    /// Fixme: Probably should be unsafe.
     pub fn create_with_depth(dev: &Device,
-                             width: u32, height: u32,
-                             bpp: u32, depth: u32, flags: DumbBufFlags)
-                             -> io::Result<DumbBuf>
+                         width: u32, height: u32,
+                         bpp: u32, depth: u32, flags: DumbBufFlags)
+                         -> io::Result<DumbBuf<B>>
     {
         // TODO: dumb depth
         // const DEPTH: u32 = 24;
@@ -1104,7 +1172,10 @@ impl DumbBuf {
             fn request() -> c_ulong { DRM_IOCTL_MODE_MAP_DUMB }
         }
         try!(dev.ioctl(&mut map_dumb));
-        
+
+        // Possible issue: if the size > usize::MAX then this could cause issues.
+        // If you need buffers that large you're going to have many issues anyway.
+        // (Eg, it won't map into your address space anyway.)
         let map = try!(Mmap::open_with_offset(dev.fd.get_ref(),
                                               Protection::ReadWrite,
                                               map_dumb.offset as usize,
@@ -1117,6 +1188,7 @@ impl DumbBuf {
             fb: fb,
             map: map,
             dev: dev,
+            _phantom: PhantomData,
         })
     }
 
@@ -1135,12 +1207,13 @@ impl DumbBuf {
     /// Bits per pixel
     pub fn bpp(&self) -> u32 { self.bpp }
 
-    /// Bytes per row
-    pub fn pixel(&self) -> u32 { self.pitch }
-    
     /// Access the buffer.
-    pub fn as_mut(&mut self) -> &mut [u8] {
-        unsafe { self.map.as_mut_slice() }
+    pub fn as_mut(&mut self) -> &mut [B] {
+        unsafe {
+            let ptr = self.map.mut_ptr() as *mut B;
+            let size = (self.size as usize) / size_of::<B>();
+            slice::from_raw_parts_mut(ptr, size)
+        }
     }
 
     /// Access the Fb object associated with this.
@@ -1149,7 +1222,7 @@ impl DumbBuf {
     }
 }
 
-impl Drop for DumbBuf {
+impl<B> Drop for DumbBuf<B> {
     fn drop(&mut self) {
         // self.map.take();
         // We need to continue if this fails.
@@ -1163,7 +1236,7 @@ impl Drop for DumbBuf {
     }
 }
 
-impl super::GemHandle for DumbBuf {
+impl<B> super::GemHandle for DumbBuf<B> {
     fn bo_handle(&self) -> u32 {
         self.handle
     }

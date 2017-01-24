@@ -1,16 +1,19 @@
 
 #![feature(conservative_impl_trait)]
 
-extern crate tokio_core;
 extern crate drm;
-extern crate futures;
 
-use tokio_core::reactor::Handle;
-use tokio_core::reactor::Timeout;
-use futures::Future;
-use drm::tokio::EventFuture;
-use std::time::Duration;
+#[cfg(feature="tokio")] extern crate tokio_core;
+#[cfg(feature="tokio")] extern crate futures;
 
+
+#[cfg(feature="tokio")] use tokio_core::reactor::Handle;
+#[cfg(feature="tokio")] use tokio_core::reactor::Timeout;
+#[cfg(feature="tokio")] use futures::Future;
+#[cfg(feature="tokio")] use drm::tokio::EventFuture;
+#[cfg(feature="tokio")] use std::time::Duration;
+
+#[cfg(feature="tokio")] 
 fn step(handle: Handle, dev: EventFuture) -> impl Future<Item=(), Error=()> {
     dev .map(move |(mut dev, blank)| {
             println!("{:?}", blank);
@@ -22,6 +25,7 @@ fn step(handle: Handle, dev: EventFuture) -> impl Future<Item=(), Error=()> {
         })
 }
 
+#[cfg(feature="tokio")] 
 fn main() {
     let mut dev = drm::Device::first_card().unwrap();
     dev.set_nonblocking(true).unwrap();
@@ -54,3 +58,7 @@ fn main() {
     core.run(m).unwrap();
 }
 
+#[cfg(not(feature="tokio"))]
+fn main() {
+    panic!("tokio example requires tokio feature");
+}

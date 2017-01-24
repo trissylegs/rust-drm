@@ -57,7 +57,7 @@ fn main() {
 
     for id in Plane::get_ids(&mut dev).unwrap() {
         match Plane::get(&mut dev, id.clone()) {
-            Err(err) => println!("Error fetching plane({}): {}", id, err),
+            Err(err) => println!("Error fetching plane({:?}): {}", id, err),
             Ok(plane) => println!("{:#?}", plane),
         }
     }

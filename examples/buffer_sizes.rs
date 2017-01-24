@@ -8,10 +8,10 @@ fn main() {
     let device = Device::first_card().unwrap();
 
     println!("width = 64, height = 64");
-    for bpp in 1..33 {
-        for depth in 1..33 {
+    for bpp in 0..33 {
+        for depth in 0..33 {
             print!("bpp: {}, depth: {}\t", bpp, depth);
-            match DumbBuf::create_with_depth(&device, 64, 64, bpp, depth, DUNNO) {
+            match DumbBuf::<u8>::create_with_depth(&device, 64, 64, bpp, depth, DUNNO) {
                 Ok(buf) => {
                     println!("Yes, size = {}, stride = {}", buf.bytes(), buf.pitch());
                 }
