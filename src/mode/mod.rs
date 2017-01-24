@@ -1127,16 +1127,6 @@ impl DumbBuf<u32>
 }
 
 impl<B> DumbBuf<B> {
-    /// Creates, maps and adds a dumb buf.  I have not checked if it's
-    /// wise to do all 3 or let the client deal with it.  But it does
-    /// mean we don't have to deal holding onto the device or the
-    /// potential error of mapping on the wrong device.
-    fn create_(dev: &Device,
-               width: u32, height: u32,
-               bpp: u32, flags: DumbBufFlags)
-               -> io::Result<DumbBuf<B>>
-    { DumbBuf::create_with_depth(dev, width, height, bpp, 24, flags) }
-
     /// Fixme: Probably should be unsafe.
     pub fn create_with_depth(dev: &Device,
                          width: u32, height: u32,
