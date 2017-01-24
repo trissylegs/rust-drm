@@ -3,6 +3,15 @@ name = "drm"
 version = "0.1.0"
 authors = ["Tristram Healy <trissylegs@gmail.com>"]
 
+description = "A rust library for using the Linux Kernal's DRM and KMS Api."
+
+repository = "https://www.github.com/HornetBlack/rust-drm"
+readme = "README.md"
+keywords = ["linux", "drm", "kms", "graphics"]
+categories = ["api-bindings", "os::unix-apis"]
+license = "Apache-2.0"
+license-file = "LICENSE"
+
 [dependencies]
 libc = "*"
 bitflags = "*"
