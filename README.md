@@ -80,8 +80,8 @@ use drm::mode::{DumbBuf, DUNNO};
 let buf = DumbBuf::create(&dev, 1920, 1080, 32, DUNNO).unwrap();
 ```
 
-* Put a frame buffer on a screen: (Requires some setup, see
-`examples/magenta.rs` for a example)
+* Put a frame buffer on a screen: Requires some setup. (TODO: Fix
+  magenta.rs so that it works again)
 
 ```rust
 let master = dev.set_master().unwrap();
@@ -91,9 +91,9 @@ master.set_crtc(crtc_id, Some(fb_id), 0, 0, &[conn_id], mode).unwrap();
 ## TODO:
 
 - [ ] Better documentation.
-- [ ] Capability information.
+- [✓] Capability information.
 - [ ] Page flip.
 - [ ] Clean up DumbBuf.
-- [ ] Implement Cursors. I don't have hardware to test this.
+- [✓] Implement Cursors.
 
 
