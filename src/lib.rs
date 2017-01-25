@@ -21,7 +21,7 @@ extern crate mio;
 
 mod ioctl_vals;
 mod ffi;
-mod fourcc;
+pub mod fourcc;
 #[cfg(feature = "tokio")]
 pub mod tokio;
 pub mod mode;
@@ -48,6 +48,8 @@ use std::path::{Path, PathBuf};
 use std::str;
 use std::string::FromUtf8Error;
 use std::time::Instant;
+use std::env::var;
+use std::fmt::Debug;
 
 #[allow(dead_code)]
 mod consts {
@@ -79,6 +81,7 @@ const BUFFER_CAPACITY: usize = 1024;
 #[derive(Debug)]
 pub struct Device {
     fd: BufReader<File>,
+    trace: bool,
 }
 
 impl Device {    
@@ -109,6 +112,7 @@ impl Device {
     pub fn open<P>(path: P) -> io::Result<Device>
         where P: AsRef<Path>,
     {
+        let trace = var("RUST_DRM_TRACE").unwrap_or("".into()) == "1";
         // TODO: Check if it's a valid card. (By major/minor number)
         OpenOptions::new()
             .read(true)
@@ -117,13 +121,15 @@ impl Device {
             .map(|f| {
                 Device {
                     fd: BufReader::with_capacity(BUFFER_CAPACITY, f),
+                    trace: trace,
                 }
             })
     }
 
     fn try_clone(&self) -> io::Result<Device> {
         Ok(Device {
-            fd: BufReader::with_capacity(0, self.fd.get_ref().try_clone()?)
+            fd: BufReader::with_capacity(0, self.fd.get_ref().try_clone()?),
+            trace: self.trace,
         })
     }
 
@@ -168,11 +174,14 @@ impl Device {
         }
     }
 
-    fn ioctl<T:DrmIoctl>(&self, arg: &mut T) -> io::Result<()> {
+    fn ioctl<T:DrmIoctl+Debug>(&self, arg: &mut T) -> io::Result<()> {
         loop {
             let ret = unsafe {
                 ioctl(self.as_raw_fd(), T::request(), arg.as_ptr())
             };
+            if self.trace {
+                println!("{}: {:?} = {}", T::request(), arg, ret);
+            }
             return match check_ioctl_err(ret) {
                 Ok(ok) => Ok(ok),
                 Err(ref e) if e.kind() == ErrorKind::Interrupted => continue,
@@ -232,13 +241,14 @@ impl Device {
     pub fn get<T: mode::Resource>(&self, id: Id<T>) -> io::Result<T> {
         T::get(self, id)
     }
+
     pub fn get_object_props<T: mode::Resource>(&self, id: Id<T>)
                                                -> io::Result<Vec<(Id<Property>, u64)>>
     {
         impl DrmIoctl for ffi::mode_obj_get_properties {
             fn request() -> c_ulong { DRM_IOCTL_MODE_OBJ_GETPROPERTIES }
         }
-
+        
         let mut get_props = ffi::mode_obj_get_properties::default();
         get_props.obj_id = id.as_u32();
         get_props.obj_type = T::object_type();
@@ -412,11 +422,25 @@ impl Device {
         Ok(call.value)
     }
 
+    /// Note: All the current caps are boolean (0 or 1) values. If
+    /// this changes in future we may need to adjust this.
+    ///
+    /// All client caps default to false.
+    pub fn set_client_capability(&self, cap: ClientCapability, to: bool) -> io::Result<()> {
+        let mut call = ffi::set_client_cap {
+            capability: cap as u64,
+            value: to as u64,
+        };
+        self.ioctl(&mut call)
+    }
+
+
     #[cfg(feature = "tokio")]
     pub fn event_stream(self, handle: &Handle) -> io::Result<tokio::EventFuture> {
         tokio::EventFuture::new(self, handle)
     }
 }
+
 
 #[repr(u64)]
 pub enum Capability {
@@ -434,6 +458,31 @@ pub enum Capability {
     CursorHeight = 0x9,
     Addfb2Modifiers = 0x10,
 }
+
+// TODO: Should  probably make Rusty-enums for these.
+/// These caps are set by the client with `Device::set_capability` to
+/// change the behavior.  This is usaully to add features that would
+/// break existing software if features were added everywhere.
+#[repr(u64)]
+pub enum ClientCapability {
+    /// DRM_CLIENT_CAP_STEREO_3D
+    ///
+    /// if set to 1, the DRM core will expose the stereo 3D capabilities of the
+    /// monitor by advertising the supported 3D layouts in the flags of struct
+    /// drm_mode_modeinfo.
+    Stereo3D = 1,
+
+    /// DRM_CLIENT_CAP_UNIVERSAL_PLANES
+    ///
+    /// If set to 1, the DRM core will expose all planes (overlay, primary, and
+    /// cursor) to userspace.
+    UniversalPlanes =  2,
+    
+    /// DRM_CLIENT_CAP_ATOMIC
+    ///
+    /// If set to 1, the DRM core will expose atomic properties to userspace
+    Atomic = 3,
+}
  
 impl AsRawFd for Device {
     fn as_raw_fd(&self) -> RawFd {
@@ -449,6 +498,7 @@ impl FromRawFd for Device {
     unsafe fn from_raw_fd(fd: RawFd) -> Device {
         Device {
             fd: BufReader::with_capacity(BUFFER_CAPACITY, File::from_raw_fd(fd)),
+            trace: false
         }
     }
 }
@@ -469,6 +519,10 @@ impl DrmIoctl for ffi::mode_cursor {
 }
 impl DrmIoctl for ffi::mode_cursor2 {
     fn request() -> c_ulong { DRM_IOCTL_MODE_CURSOR2 }
+}
+
+impl DrmIoctl for ffi::set_client_cap {
+    fn request() -> c_ulong { DRM_IOCTL_SET_CLIENT_CAP }
 }
 
 pub trait GemHandle {
@@ -573,6 +627,7 @@ impl<'a> Master<'a>
                     -> io::Result<()>
     {
         #[repr(C)]
+        #[derive(Debug)]
         struct SetCrtc {
             set_connectors_ptr: u64,
             count_connectors: u32,

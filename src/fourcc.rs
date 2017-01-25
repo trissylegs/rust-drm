@@ -16,7 +16,7 @@ fn from_u32(u: u32) -> (char, char, char, char) {
 }
 
 macro_rules! decl_fourcc_list {
-    ( $( $name:ident ($a:expr, $b:expr, $c:expr, $d:expr) ),* ) => {
+    ( $( $name:ident ($a:expr, $b:expr, $c:expr, $d:expr)),* ) => {
         #[repr(u32)]
         #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
         pub enum FourCC {
@@ -26,7 +26,7 @@ macro_rules! decl_fourcc_list {
             )*
         }
 
-        impl FourCC {
+        impl From<u32> for FourCC {
             fn from(n: u32) -> FourCC {
                 match from_u32(n) {
                     $(

@@ -10,6 +10,7 @@ use super::ioctl_vals::*;
 use super::Device;
 use super::fourcc::FourCC;
 use super::DrmIoctl;
+use GemHandle;
 use std::marker::PhantomData;
 use memmap::{Mmap, Protection};
 use std::hash::{Hash, Hasher};
@@ -315,8 +316,14 @@ impl Connector
         self.encoder_id
     }
 
-    /// Get the id of this encoder.
+    /// Get the id of this connector.
     pub fn connector_id(&self) -> Id<Connector>
+    {
+        self.connector_id
+    }
+
+    /// Get the id of this connector.
+    pub fn id(&self) -> Id<Connector>
     {
         self.connector_id
     }
@@ -666,6 +673,7 @@ bitflags! {
         const PROP_ENUM         = (1<<3),
         const PROP_BLOB         = (1<<4),
         const PROP_BITMASK      = (1<<5),
+        const PROP_ATOMIC       = 0x80000000,
     }
 }
 
@@ -976,6 +984,7 @@ impl Resource for Fb {
         /// There are two ioctls that make use of drm_mode_fb_cmd.
         /// So we must define DrmIoctl locally.
         #[repr(C)]
+        #[derive(Debug)]
         struct GetFb(ffi::fb_cmd);
         impl DrmIoctl for GetFb {
             fn request() -> c_ulong { DRM_IOCTL_MODE_GETFB }
@@ -1020,6 +1029,7 @@ impl Fb
         /// There are two ioctls that make use of drm_mode_fb_cmd.
         /// So we must define DrmIoctl locally.
         #[repr(C)]
+        #[derive(Debug)]
         struct AddFb(ffi::fb_cmd);
         impl DrmIoctl for AddFb {
             fn request() -> c_ulong { DRM_IOCTL_MODE_ADDFB }
@@ -1033,16 +1043,36 @@ impl Fb
             ..Default::default()
         });
 
-        dev.ioctl(&mut add_fb)
-            .map(|()|
-                 Fb {
-                     fb_id: unsafe { Id::from_u32(add_fb.0.fb_id).unwrap() },
-                     size: (width, height),
-                     pitch: pitch,
-                     bits_per_pixel: bpp,
-                     depth: depth,
-                     handle: handle,
-                 })
+        try!(dev.ioctl(&mut add_fb));
+
+        Ok(Fb {
+            fb_id: unsafe { Id::from_u32(add_fb.0.fb_id).unwrap() },
+            size: (width, height),
+            pitch: pitch,
+            bits_per_pixel: bpp,
+            depth: depth,
+            handle: handle,
+        })
+    }
+
+    fn add_fb2(device: &Device,
+               width: u32, height: u32,
+               pixel_format: FourCC,
+               bo_handles: [u32; 4], pitches: [u32; 4],
+               offsets: [u32; 4], flags: u32) -> io::Result<Id<Fb>>
+    {
+        let mut req = ffi::fb_cmd2 {
+            width: width, height: height,
+            pixel_format: pixel_format as u32,
+            flags: flags,
+            handles: bo_handles,
+            pitches: pitches,
+            offsets: offsets,
+            ..Default::default()
+        };
+
+        try!(device.ioctl(&mut req));
+        Ok(Id(req.fb_id, PhantomData))
     }
 
     /// Remove the frame buffer from DRM.
@@ -1053,12 +1083,17 @@ impl Fb
     ///
     /// TODO: It might be a good idea to create a real RAII type for Fb.
     pub fn rm(dev: &Device, id: Id<Fb>) -> io::Result<()> {
+        #[derive(Debug)]
         struct RmFb(Id<Fb>);
         impl DrmIoctl for RmFb {
             fn request() -> c_ulong { DRM_IOCTL_MODE_RMFB }
         }
         dev.ioctl(&mut RmFb(id))
     }
+}
+
+impl DrmIoctl for ffi::fb_cmd2 {
+    fn request() -> c_ulong { DRM_IOCTL_MODE_ADDFB2 }
 }
 
 // /// Units that a dumb buffer is made of.
@@ -1078,8 +1113,103 @@ impl Fb
 // unsafe impl BufferData for u16 { fn bpp() -> u32 { 16 } }
 // unsafe impl BufferData for u32 { fn bpp() -> u32 { 32 } }
 
+
+pub struct DumbBufOptions<'a> {
+    device: &'a Device,
+    width: u32, height: u32,
+    bpp: u32, depth: u32,
+    format: FourCC, 
+    dumb_flags: DumbBufFlags,
+    addfb2_flags: u32,
+}
+
+impl<'a> DumbBufOptions<'a> {
+    pub fn new(device: &'a Device) -> DumbBufOptions<'a> {
+        DumbBufOptions {
+            device: device,
+            width: 0, height: 0,
+            bpp: 32, depth: 24,
+            format: FourCC::XRGB8888,
+            dumb_flags: DUNNO,
+            addfb2_flags: 0,
+        }
+    }
+    pub fn width(&mut self, width: u32) -> &mut DumbBufOptions<'a> {
+        self.width = width; self
+    }
+    pub fn height(&mut self, height: u32) -> &mut DumbBufOptions<'a> {
+        self.height = height; self
+    }
+    pub fn bpp(&mut self, bpp: u32) -> &mut DumbBufOptions<'a> {
+        self.bpp = bpp; self
+    }
+    pub fn depth(&mut self, depth: u32) -> &mut DumbBufOptions<'a> {
+        self.depth = depth; self
+    }
+    pub fn format(&mut self, format: FourCC) -> &mut DumbBufOptions<'a> {
+        self.format = format; self
+    }
+
+    pub fn create(&mut self) -> io::Result<DumbBuf> {
+        // TODO: dumb depth
+        // const DEPTH: u32 = 24;
+        let device = self.device.try_clone()?;
+        
+        let mut create_dumb =
+            ffi::create_dumb {
+                height: self.height,
+                width: self.width,
+                bpp: self.bpp,
+                flags: self.dumb_flags.bits(),
+                ..Default::default()
+            };
+        impl DrmIoctl for ffi::create_dumb {
+            fn request() -> c_ulong { DRM_IOCTL_MODE_CREATE_DUMB }
+        }
+        try!(device.ioctl(&mut create_dumb));
+
+        let handles = [create_dumb.handle, 0, 0, 0];
+        let pitches = [create_dumb.pitch, 0, 0, 0];
+        let offsets = [0; 4];
+        
+        let fb = try!(Fb::add_fb2(&device, 
+                                  self.width, self.height,
+                                  self.format,
+                                  handles, pitches, offsets, self.addfb2_flags));
+        
+        let mut map_dumb =
+            ffi::map_dumb {
+                handle: create_dumb.handle,
+                ..Default::default()
+            };
+        
+        impl DrmIoctl for ffi::map_dumb {
+            fn request() -> c_ulong { DRM_IOCTL_MODE_MAP_DUMB }
+        }
+        try!(device.ioctl(&mut map_dumb));
+
+        // Possible issue: if the size > usize::MAX then this could cause issues.
+        // If you need buffers that large you're going to have many issues anyway.
+        // (Eg, it won't map into your address space anyway.)
+        let map = try!(Mmap::open_with_offset(device.fd.get_ref(),
+                                              Protection::ReadWrite,
+                                              map_dumb.offset as usize,
+                                              create_dumb.size as usize));
+        
+        Ok(DumbBuf {
+            width: self.width, height: self.height,
+            bpp: self.bpp, flags: self.dumb_flags,
+            pitch: create_dumb.pitch, size: create_dumb.size,
+            handle: create_dumb.handle,
+            fb: try!(device.get(fb)),
+            map: map,
+            dev: device,
+        })
+    }
+}
+
 #[allow(dead_code)]
-pub struct DumbBuf<P>
+pub struct DumbBuf
 {
     handle: u32,
     height: u32,
@@ -1091,95 +1221,28 @@ pub struct DumbBuf<P>
     fb: Fb,
     map: Mmap,
     dev: Device,
-    _phantom: PhantomData<*mut P>
 }
 
-// Todo: destroy DumbBuf
+// TODO: Clean this up a bit.
 //
-// We need access to the underlying Fd to destroy it. Potential solutions:
-//  * Put dev.fd behind a Arc. Then we can carry around copies of it.
-//  * dup dev.fd, so we can have our own copy of it. (I like this one)
-//  * maintain a reference to &Device so we can call Device::ioctl.
-//  * Require the use to provide &Device when destroying buffer.
-//    then Drop does not destroy the buffer.
-
-// Todo: 24-bit buffers.
+// Currently we:
+//  * create the dumb buffer
+//  * get a device offset (Map)
+//  * mmap the buffer
 //
-// There are probably devices that use 24-bit pixel depths and thus 24 bits per 
+// A user might want to do this sepeartly.
 
-impl DumbBuf<u8>
-{
-    pub fn create(dev: &Device, width: u32, height: u32) -> io::Result<DumbBuf<u8>> {
-        Self::create_with_depth(dev, width, height,  8, 0, DUNNO)
-    }
-}
-impl DumbBuf<u16>
-{
-    pub fn create(dev: &Device, width: u32, height: u32) -> io::Result<DumbBuf<u16>> {
-        Self::create_with_depth(dev, width, height, 16, 0, DUNNO)
-    }
-}
-impl DumbBuf<u32>
-{
-    pub fn create(dev: &Device, width: u32, height: u32) -> io::Result<DumbBuf<u32>> {
-        Self::create_with_depth(dev, width, height, 32, 0, DUNNO)
-    }
-}
-
-impl<B> DumbBuf<B> {
+impl DumbBuf {
     /// Fixme: Probably should be unsafe.
     pub fn create_with_depth(dev: &Device,
-                         width: u32, height: u32,
-                         bpp: u32, depth: u32, flags: DumbBufFlags)
-                         -> io::Result<DumbBuf<B>>
+                             width: u32, height: u32,
+                             bpp: u32, depth: u32)
+                             -> io::Result<DumbBuf>
     {
-        // TODO: dumb depth
-        // const DEPTH: u32 = 24;
-        let dev = dev.try_clone()?;
-        
-        let mut create_dumb =
-            ffi::create_dumb {
-                height: height,
-                width: width,
-                bpp: bpp,
-                flags: flags.bits(),
-                ..Default::default()
-            };
-        impl DrmIoctl for ffi::create_dumb {
-            fn request() -> c_ulong { DRM_IOCTL_MODE_CREATE_DUMB }
-        }
-        try!(dev.ioctl(&mut create_dumb));
-
-        let fb = try!(Fb::add(&dev, create_dumb.handle,
-                              width, height, bpp, create_dumb.pitch, depth));
-        
-        let mut map_dumb =
-            ffi::map_dumb {
-                handle: create_dumb.handle,
-                ..Default::default()
-            };
-        impl DrmIoctl for ffi::map_dumb {
-            fn request() -> c_ulong { DRM_IOCTL_MODE_MAP_DUMB }
-        }
-        try!(dev.ioctl(&mut map_dumb));
-
-        // Possible issue: if the size > usize::MAX then this could cause issues.
-        // If you need buffers that large you're going to have many issues anyway.
-        // (Eg, it won't map into your address space anyway.)
-        let map = try!(Mmap::open_with_offset(dev.fd.get_ref(),
-                                              Protection::ReadWrite,
-                                              map_dumb.offset as usize,
-                                              create_dumb.size as usize));
-        
-        Ok(DumbBuf {
-            width: width, height: height, bpp: bpp, flags: flags,
-            pitch: create_dumb.pitch, size: create_dumb.size,
-            handle: create_dumb.handle,
-            fb: fb,
-            map: map,
-            dev: dev,
-            _phantom: PhantomData,
-        })
+        DumbBufOptions::new(dev)
+            .width(width).height(height)
+            .bpp(bpp).depth(depth)
+            .create()
     }
 
     /// Not sure what this used for other than creating/mapping the
@@ -1191,20 +1254,12 @@ impl<B> DumbBuf<B> {
 
     /// Size of buffer in bytes
     pub fn bytes(&self) -> usize { self.size as usize }
+    
     /// Distance between rows in bytes
     pub fn pitch(&self) -> usize { self.pitch as usize }
 
     /// Bits per pixel
     pub fn bpp(&self) -> u32 { self.bpp }
-
-    /// Access the buffer.
-    pub fn as_mut(&mut self) -> &mut [B] {
-        unsafe {
-            let ptr = self.map.mut_ptr() as *mut B;
-            let size = (self.size as usize) / size_of::<B>();
-            slice::from_raw_parts_mut(ptr, size)
-        }
-    }
 
     /// Access the Fb object associated with this.
     pub fn fb(&self) -> &Fb {
@@ -1212,7 +1267,36 @@ impl<B> DumbBuf<B> {
     }
 }
 
-impl<B> Drop for DumbBuf<B> {
+impl AsMut<[u8]> for DumbBuf {
+    fn as_mut(&mut self) -> &mut [u8] {
+        unsafe {
+            let ptr = self.map.mut_ptr() as *mut _;
+            let size = (self.size as usize) / size_of::<u8>();
+            slice::from_raw_parts_mut(ptr, size)
+        }
+    }
+}
+impl AsMut<[u16]> for DumbBuf {
+    fn as_mut(&mut self) -> &mut [u16] {
+        unsafe {
+            let ptr = self.map.mut_ptr() as *mut _;
+            let size = (self.size as usize) / size_of::<u16>();
+            slice::from_raw_parts_mut(ptr, size)
+        }
+    }
+}
+impl AsMut<[u32]> for DumbBuf {
+    fn as_mut(&mut self) -> &mut [u32] {
+        unsafe {
+            let ptr = self.map.mut_ptr() as *mut _;
+            let size = (self.size as usize) / size_of::<u32>();
+            slice::from_raw_parts_mut(ptr, size)
+        }
+    }
+}
+
+
+impl Drop for DumbBuf {
     fn drop(&mut self) {
         // self.map.take();
         // We need to continue if this fails.
@@ -1226,7 +1310,7 @@ impl<B> Drop for DumbBuf<B> {
     }
 }
 
-impl<B> super::GemHandle for DumbBuf<B> {
+impl GemHandle for DumbBuf {
     fn bo_handle(&self) -> u32 {
         self.handle
     }

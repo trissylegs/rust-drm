@@ -2,7 +2,9 @@
 extern crate drm;
 
 use drm::Device;
+use drm::ClientCapability;
 use drm::mode::*;
+use std::env::args;
 
 use std::collections::HashMap;
 
@@ -10,6 +12,17 @@ fn main()
 {
     let dev = Device::first_card().expect("Failed to open a device.");
 
+    // let dev = dev.set_master().expect("Failed to set master");
+    dev.set_client_capability(ClientCapability::UniversalPlanes, true)
+        .expect("No universal plane support") ;
+    
+    for arg in args() {
+        if arg == "--atomic" {
+            dev.set_client_capability(ClientCapability::Atomic, true)
+                .expect("Failed to set atomic mode setting cap");
+        }
+    }
+    
     let res = dev.get_resources().expect("Failed to get card resources");
     let mut prop_info = HashMap::new();
 
