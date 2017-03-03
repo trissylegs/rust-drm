@@ -15,6 +15,12 @@ allocate dumb buffers.
 Add to Cargo.toml:
 
 ```
+drm = "0.1"
+```
+
+or 
+
+```
 drm = { git = "https://github.com/HornetBlack/rust-drm.git" }
 ```
 
