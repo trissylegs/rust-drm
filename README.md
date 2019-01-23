@@ -86,8 +86,7 @@ use drm::mode::{DumbBuf, DUNNO};
 let buf = DumbBuf::create(&dev, 1920, 1080, 32, DUNNO).unwrap();
 ```
 
-* Put a frame buffer on a screen: Requires some setup. (TODO: Fix
-  magenta.rs so that it works again)
+* Put a frame buffer on a screen: Requires some setup. (See examples/magenta.rs)
 
 ```rust
 let master = dev.set_master().unwrap();
