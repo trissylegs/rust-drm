@@ -8,7 +8,7 @@ allocate dumb buffers.
 
 (Nothing to do with Digital Rights Management.)
 
-[Documentation](https://hornetblack.github.io/rust-drm/drm/index.html)
+[Documentation](https://trissylegs.github.io/rust-drm/drm/index.html)
 
 ## To use
 
@@ -21,7 +21,7 @@ drm = "0.1"
 or 
 
 ```
-drm = { git = "https://github.com/HornetBlack/rust-drm.git" }
+drm = { git = "https://github.com/trissylegs/rust-drm.git" }
 ```
 
 Add to your crate:
